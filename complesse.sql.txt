@@ -1,0 +1,269 @@
+-- 1 si selezioni lo stipendio mensile, il nome e il cognome dei docenti ordinari e i corsi da essi insegnati
+SELECT s.Valore/12 AS Stipendio, p.Nome, p.Cognome, c.Nome
+FROM Personale_docente AS p
+	INNER JOIN Stipendio AS s ON p.Classe_stipendio = s.Classe
+	INNER JOIN Corso AS c ON p.Matricola_d = c.Docente
+WHERE p.Ruolo = "Ordinario";
+
+-- 2 si selezionino tutti corsi (nome) appartenenti a corsi di laurea triennali,
+-- con il totale delle ore
+SELECT c.Nome AS Corso, (c.Ore_lezione + C.Ore_esercitazione) AS Ore
+FROM Corso AS c
+	INNER JOIN Corso_di_Laurea_corsi AS clc ON clc.Codice_c = c.Codice_c
+	INNER JOIN Corso_di_Laurea AS cl ON clc.idCorso_di_Laurea =
+cl.idCorso_di_Laurea
+WHERE cl.Tipologia = "triennale";
+
+-- 3 selezionare gli esami svolti dallo studente Pizzo Andrea con le relative votazioni e date
+SELECT c.Nome AS Corso, e.Voto, e.Data
+FROM Studente AS s
+	INNER JOIN Esame AS e ON e.Matricola_studente = s.Matricola_st
+	INNER JOIN Corso AS c ON e.Codice_corso = c.Codice_c
+WHERE s.Cognome = "Pizzo" AND s.Nome = "Andrea";
+
+-- 4 selezionare gli esami svolti nei corsi di laurea triennale, e le relative votazioni
+SELECT c.Nome AS Corso, e.Voto, e.Data
+FROM Corso AS c
+	INNER JOIN Esame AS e ON e.Codice_corso = c.Codice_c
+	INNER JOIN Corso_di_Laurea_corsi AS clc ON c.Codice_c = clc.Codice_c
+	INNER JOIN Corso_di_Laurea AS cl ON cl.idCorso_di_Laurea =
+clc.idCorso_di_Laurea
+WHERE cl.Tipologia="triennale";
+
+-- 5 selezionare gli esami, e relativi crediti totali, svolti nei corsi di laurea triennale
+-- senza ripetizioni di record e senza votazioni
+SELECT DISTINCT c.Nome, (c.Crediti_lezione + c.Crediti_esercitazione ) AS Crediti
+FROM Corso AS c
+	INNER JOIN Esame AS e ON e.Codice_corso = c.Codice_c
+	INNER JOIN Corso_di_Laurea_corsi AS clc ON c.Codice_c = clc.Codice_c
+	INNER JOIN Corso_di_Laurea AS cl ON cl.idCorso_di_Laurea =
+clc.idCorso_di_Laurea
+WHERE cl.Tipologia = "triennale";
+
+-- 6 si selezionino il nome, il cognome, la matricola e la città di residenza degli studenti
+-- che hanno il corso "Analisi Matematica" nel piano di studi
+▪ SELECT s.Nome, s.Cognome, s.Matricola_st AS Matricola, c.Nome AS Citta_di_residenza
+FROM Studente AS s
+	INNER JOIN Citta AS c ON s.Citta_residenza = c.idCitta
+	INNER JOIN Piano_di_studio AS p ON s.Matricola_st = p.Matricola_st
+	INNER JOIN Corso AS cs ON p.Codice_corso = cs.Codice_c
+WHERE cs.Nome = "Analisi Matematica";
+
+-- 7 si selezionino il nome, il cognome, la matricola e la città di residenza dei
+-- docenti ordinari e associati che insegnano alla laurea triennale e che
+-- guadagnano almeno 40000
+SELECT DISTINCT d.Nome, d.Cognome, d.Matricola_d AS Matricola, d.Nome AS Citta_di_residenza
+FROM Personale_docente AS d
+	INNER JOIN Citta AS c ON d.Citta_di_residenza = c.idCitta
+	INNER JOIN Corso AS cs ON cs.Docente = d.Matricola_d
+	INNER JOIN Corso_di_Laurea_corsi AS clc ON cs.Codice_c = clc.Codice_c
+	INNER JOIN Corso_di_Laurea AS cl ON clc.idCorso_di_Laurea = cl.idCorso_di_Laurea
+	INNER JOIN Stipendio AS s ON d.Classe_stipendio = s.Classe
+WHERE cl.Tipologia = "Triennale" AND
+(d.Ruolo = "Ordinario" OR d.Ruolo = "Associato") AND s.Valore > 40000;
+
+-- 8 si selezionino gli studenti triennale (nome, cognome, matricola e città di
+-- residenza) che hanno sostenuto l'esame di "Analisi Matematica" e
+-- appartengono alla regione Piemonte
+SELECT s.Nome, s.Cognome, s.Matricola_st AS Matricola, c.Nome AS Residenza
+FROM Studente AS s
+INNER JOIN Citta AS c ON s.Citta_residenza = c.idCitta
+INNER JOIN Esame AS e ON e.Matricola_studente = s.Matricola_st
+INNER JOIN Corso AS cs ON cs.Codice_c = e.Codice_corso
+INNER JOIN Corso_di_Laurea AS cl ON s.Corso_di_Laurea = cl.idCorso_di_Laurea
+WHERE cl.Tipologia = "Triennale" AND c.Regione = "PIEMONTE" AND cs.Nome = "Analisi Matematica";
+
+-- 9 stilare una classifica degli studenti (con cognome, nome, matricola e voto) che
+-- hanno sostenuto l'esame con codice E3101Q117 con un voto maggiore di 23,
+-- ordinandola per voto decrescente
+SELECT s.Nome, s.Cognome, s.Matricola_st, e.Voto
+FROM Studente AS s
+JOIN Esame AS e ON s.Matricola_st = e.Matricola_studente
+WHERE e.Codice_corso = "E3101Q117" AND e.Voto > 23 ORDER BY e.Voto DESC;
+
+-- 10 contare il numero di studenti che hanno superato l'esame con codice E3101Q117
+-- con un voto maggiore di 23
+SELECT COUNT(*)
+FROM Studente AS s JOIN Esame AS e ON s.Matricola_st = e.Matricola_studente
+WHERE e.Codice_corso = "E3101Q117" AND e.Voto > 23;
+
+-- 11 selezionare gli studenti (con nome, cognome e matricola) con la media dei
+-- voti degli esami, e ordinarli secondo la media in ordine descrescente
+SELECT s.Nome, s.Cognome, s.Matricola_st, AVG(e.Voto) AS media
+FROM Studente AS s JOIN Esame AS e ON s.Matricola_st = e.Matricola_studente
+GROUP BY s.Matricola_st, s.Nome, s.Cognome
+ORDER BY media DESC;
+
+-- 12 selezionare gli studenti (con nome, cognome e matricola) che iniziano con la
+-- lettera B e il numero di esami svolti;
+SELECT s.Nome, s.Cognome, s.Matricola_st, COUNT(*) AS n_esami
+FROM Studente AS s JOIN Esame AS e ON s.Matricola_st = e.Matricola_studente
+GROUP BY s.Matricola_st, s.Nome, s.Cognome
+HAVING s.Nome LIKE "B%";
+
+-- 13 selezionare gli studenti (con nome, cognome e matricola) che hanno svolto
+-- l'esame con codice E3101Q020 e/o con codice E3101Q117
+(SELECT s.Cognome, s.Nome, s.Matricola_st
+FROM Studente AS s JOIN Esame AS e ON e.Matricola_studente = s.Matricola_st
+WHERE e.Codice_corso = "E3101Q020")
+UNION
+(SELECT s1.Cognome, s1.Nome, s1.Matricola_st
+FROM Studente AS s1 JOIN Esame AS e1 ON e1.Matricola_studente = s1.Matricola_st
+WHERE e1.Codice_corso = "E3101Q117");
+
+-- 14 selezionare gli studenti (con nome, cognome e matricola) che hanno svolto l'esame
+-- con codice E3101Q020 e con codice E3101Q117
+-- usando join
+SELECT s.Cognome, s.Nome, s.Matricola_st
+FROM Studente AS s
+JOIN Esame AS e ON e.Matricola_studente = s.Matricola_st
+JOIN Esame AS e1 ON e1.Matricola_studente = s.Matricola_st
+WHERE e.Codice_corso = "E3101Q020" AND e1.Codice_corso = "E3101Q117";
+-- Utilizzando interrogazioni nidificate
+SELECT t1.Cognome, t1.Nome, t1.Matricola_st
+FROM (
+	SELECT s.Cognome, s.Nome, s.Matricola_st FROM Studente AS s
+	JOIN Esame AS e ON e.Matricola_studente = s.Matricola_st
+	WHERE e.Codice_corso = "E3101Q020"
+) AS t1
+JOIN (
+	SELECT s1.Cognome, s1.Nome, s1.Matricola_st
+	FROM Studente AS s1
+	JOIN Esame AS e1 ON e1.Matricola_studente = s1.Matricola_st
+	WHERE e1.Codice_corso = "E3101Q117"
+) AS t2 ON t1.Matricola_st = t2.Matricola_st;
+
+-- 15 visualizzare i corsi (con codice e nome) di cui di cui lo studente con matricola
+-- 1492601 non ha ancora sostenuto l'esame
+SELECT c.Codice_c, c.Nome
+FROM Corso AS c
+	JOIN Piano_di_studio AS p ON p.Codice_corso = c.Codice_c
+	JOIN Studente AS s ON p.Matricola_st = s.Matricola_st
+WHERE s.Matricola_st = "1492601" AND c.Codice_c NOT IN (
+	SELECT e1.Codice_corso
+	FROM Esame AS e1
+	JOIN Studente AS s1 ON e1.Matricola_studente = s1.Matricola_st
+	WHERE s1.Matricola_st = "1492601"
+);
+
+-- 16 Visualizzare i corsi (con codice e nome) il cui esame deve ancora essere
+-- sostenuto da qualche studente (rispetto al relativo piano di studi) e il numero di
+-- studenti che li devono sostenere. Si considerino solo i corsi della laurea triennale
+-- e si ordinino i risultati in ordine decrescente per numero di studenti
+select c.Nome, esami_nel_piano_di_studi.num_nel_pds - sostenuti.num_sostenuti as mancanti
+from Corso c,
+	(
+    -- seleziono i corsi insieme al numero di studenti che ce l'ha nel piano di studi
+	select c1.Codice_c, count(*) as num_nel_pds from Corso c1
+    join Piano_di_studio pds on pds.Codice_corso = c1.Codice_c
+    join Studente s1 on s1.Matricola_st = pds.Matricola_st
+    group by c1.Codice_c
+    ) as esami_nel_piano_di_studi,
+	(
+    -- seleziono i corsi insieme al numero di persone che hanno sostenuto l'esame
+    select e.Codice_corso, count(*) as num_sostenuti from Esame e
+    group by e.Codice_corso
+    ) as sostenuti,
+	(
+	-- seleziono tutti i corsi dei cdl triennali
+	select distinct c.Codice_c from Corso c
+		inner join Corso_di_Laurea_corsi clc on clc.Codice_c = c.Codice_c
+		inner join Corso_di_Laurea cl on cl.idCorso_di_Laurea = clc.idCorso_di_Laurea
+        where cl.Tipologia = "Triennale"
+	) as esami_triennale
+
+where c.Codice_c = esami_nel_piano_di_studi.Codice_c
+and c.Codice_c = sostenuti.Codice_corso
+and c.Codice_c = esami_triennale.Codice_c
+order by mancanti desc
+;
+-- altra soluzione
+SELECT c.Codice_c, c.Nome, (COUNT(*) - esami_svolti) AS da_sostenere
+FROM Corso AS c
+JOIN Piano_di_studio AS p ON p.Codice_corso = c.Codice_c
+JOIN (
+	SELECT e1.Codice_corso AS corso, COUNT(*) AS esami_svolti
+	FROM Esame AS e1
+	JOIN Studente AS s1 ON e1.Matricola_studente = s1.Matricola_st
+	GROUP BY e1.Codice_corso
+) AS es ON c.Codice_c = es.Corso
+JOIN Corso_di_Laurea_corsi AS cl ON cl.Codice_c = c.Codice_c
+WHERE cl.idCorso_di_Laurea = (
+	SELECT cl1.idCorso_di_Laurea FROM Corso_di_Laurea AS cl1 WHERE cl1.Tipologia = "Triennale"
+)
+GROUP BY c.Codice_c, c.Nome
+ORDER BY da_sostenere DESC;
+
+-- 17 Visualizzare i corsi (con codice e nome) con la media dei voti conseguiti dagli
+-- studenti nei relativi esami, e il numero di studenti che li hanno sostenuti.
+-- Selezionare solo i corsi della laurea magistrale il cui esame è stato superato da
+-- almeno 60 studenti. Si ordinino i risultati in ordine decrescente rispetto alla
+-- media dei voti
+SELECT c.Codice_c, c.Nome, AVG(e.Voto) AS media, COUNT(*) AS numero_studenti
+FROM Corso AS c
+	JOIN Esame AS e ON e.Codice_corso = c.Codice_c
+	JOIN Studente AS s ON e.Matricola_studente = s.Matricola_st
+	JOIN Corso_di_Laurea_corsi AS cl ON cl.Codice_c = c.Codice_c
+WHERE cl.idCorso_di_Laurea = (
+	SELECT cl1.idCorso_di_Laurea
+	FROM Corso_di_Laurea AS cl1
+	WHERE cl1.Tipologia = "Magistrale"
+)
+GROUP BY c.Codice_c, c.Nome
+HAVING numero_studenti >= 60
+ORDER BY media DESC;
+
+-- 18 selezionare il miglior studente in termini di media dei voti (con cognome, nome,
+-- matricola, media e numero esami sostenuti) della laurea triennale
+SELECT t1.Cognome, t1.Nome, t1.Matricola_st, t1.media, t1.esami_sostenuti
+FROM (
+	SELECT s.Cognome, s.Nome, s.Matricola_st, AVG(e.Voto) AS media, COUNT(*) AS esami_sostenuti
+	FROM Studente AS s
+		JOIN Esame AS e ON e.Matricola_studente = s.Matricola_st
+		JOIN Corso_di_Laurea AS cdl ON s.Corso_di_laurea = cdl.idCorso_di_Laurea
+	WHERE cdl.Tipologia = "Triennale"
+	GROUP BY s.Matricola_st, s.Cognome, s.Nome
+	ORDER BY media DESC
+) AS t1
+WHERE t1.media = (
+	SELECT MAX(t2.media1) FROM (
+		SELECT s1.Matricola_st, AVG(e1.Voto) AS media1
+		FROM Studente s1
+			JOIN Esame AS e1 ON e1.Matricola_studente = s1.Matricola_st
+			JOIN Corso_di_Laurea AS cdl1 ON s1.Corso_di_laurea = cdl1.idCorso_di_Laurea
+	WHERE cdl1.Tipologia = "Triennale"
+	GROUP BY s1.Matricola_st, s1.Cognome, s1.Nome
+	) AS T2
+);
+
+-- 19 visualizzare le città di residenza (con nome e regione) e il numero di studenti
+-- che provengono da tali città. Ordinare i risultati in ordine decrescente rispetto
+-- al numero di studenti
+SELECT c.Nome, c.Regione, COUNT(*) AS numero_studenti
+FROM Citta AS c
+JOIN Studente AS s ON s.Citta_residenza = c.idCitta
+GROUP BY c.Nome, c.Regione
+ORDER BY numero_studenti DESC;
+
+-- 20 Visualizzare gli studenti della triennale e il numero di crediti che hanno finora ottenuto
+-- usando solamente JOIN
+SELECT s.Cognome, s.Nome, s.Matricola_st,
+SUM(c.Crediti_lezione + c.Crediti_esercitazione) AS crediti_totali
+FROM Studente AS s
+	JOIN Esame AS e ON e.Matricola_studente = s.Matricola_st
+	JOIN Corso AS c ON c.codice_c = e.Codice_corso
+	JOIN Corso_di_Laurea AS cdl ON s.Corso_di_laurea = cdl.idCorso_di_Laurea
+WHERE cdl.Tipologia = "Triennale" GROUP BY s.Matricola_st, s.Cognome, s.Nome
+ORDER BY Crediti_totali DESC;
+-- usando interrogazioni nidificate
+SELECT s.Cognome, s.Nome, s.Matricola_st, SUM(c.Crediti) AS crediti_totali
+FROM Studente AS s
+	JOIN Esame AS e ON e.Matricola_studente = s.Matricola_st
+	JOIN (
+		SELECT c1.Codice_c, c1.Nome, (c1.Crediti_lezione + c1.Crediti_esercitazione) AS crediti
+		FROM Corso AS c1
+	) AS c ON c.Codice_c = e.Codice_corso
+WHERE s.Corso_di_Laurea = (
+SELECT cl1.idCorso_di_Laurea FROM Corso_di_Laurea cl1 WHERE cl1.Tipologia = "Triennale"
+)
+GROUP BY s.Matricola_st, s.Cognome, s.Nome ORDER BY crediti_totali DESC;

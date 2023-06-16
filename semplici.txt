@@ -1,0 +1,124 @@
+USE universita;
+
+-- selezionare tutte le città (tutti i campi) [1000+]
+SELECT * FROM citta;
+
+-- selezionare tutte le province [1000+]
+SELECT provincia FROM citta;
+
+-- selezionare tutte le province senza ripetizioni  [107]
+SELECT DISTINCT provincia FROM citta;
+
+-- selezionare i nomi delle città che iniziano con la lettera “M” usando funzione LEFT [827]
+SELECT nome FROM citta WHERE LEFT(nome,1)="M";
+
+-- selezionare i nomi delle città che iniziano con la lettera “M” usando funzione LIKE [827]
+SELECT nome FROM citta WHERE nome LIKE "M%";
+
+-- selezionare tutti gli studenti che contengono una “r” nel nome [279]
+SELECT * FROM studente WHERE nome LIKE "%r%";
+
+-- selezionare tutti gli studenti i cui cognomi finiscono per “i”. [278]
+SELECT * FROM studente WHERE cognome LIKE "%i";
+
+-- selezionare gli studenti che hanno una matricola compresa tra 500 e 520 usando usando <,>,=  [21]
+SELECT * FROM studente 
+WHERE matricola>=500
+AND matricola <= 520;
+
+-- selezionare gli studenti che hanno una matricola compresa tra 500 e 520 usando usando  BETWEEN [21]
+SELECT * FROM studente 
+WHERE matricola BETWEEN 500 AND 520;
+
+-- selezionare i corsi che hanno un numero di ore di lezione maggiore a 35 [18]
+SELECT * FROM corso WHERE ore_lezione>=35;
+
+-- selezionare il nome del corso insieme al monte ore (ore lezione + ore esercitazione) [30]
+SELECT nome, ore_lezione+ore_esercitazione AS monteore FROM corso;
+
+-- selezionare i corsi in cui il monte ore (lezione + esercitazione) è inferiore a 50 [3]
+SELECT * FROM corso WHERE ore_lezione+ore_esercitazione < 50;
+
+-- selezionare nome corso e suo monteore se quest'ultimo è inferiore a 80 [11]
+SELECT nome, ore_lezione+ore_esercitazione AS monteore 
+FROM corso
+WHERE ore_lezione+ore_esercitazione < 80;
+
+-- selezionare il nome del corso seguito dal nome e cognome del docente che lo insegna 
+-- con un join implicito  [30]
+SELECT corso.nome, docente.nome, docente.cognome
+FROM corso, docente
+WHERE corso.docente = docente.matricola;
+
+SELECT c.nome, d.nome, d.cognome
+FROM corso AS c, docente AS d
+WHERE c.docente = d.matricola;
+
+SELECT c.nome, d.nome, d.cognome
+FROM corso c, docente d
+WHERE c.docente = d.matricola;
+
+
+-- selezionare il nome del corso seguito dal nome e cognome del docente che lo insegna 
+-- con un join esplicito (JOIN ON)  [30]
+SELECT c.nome, d.nome, d.cognome
+FROM docente d
+JOIN corso c ON c.docente = d.matricola;
+
+-- selezionare il nome del corso di laurea seguito da nome e cognome del docente 
+-- che lo presiede [3]
+SELECT cdl.nome, d.nome, d.cognome
+FROM corso_di_laurea cdl, docente d
+WHERE cdl.presidente = d.matricola;
+
+
+-- selezionare i dati dei corsi afferenti a corsi di laurea specialistica [10]
+SELECT c.* 
+FROM corso c, corso_di_laurea cdl, afferisce a
+WHERE c.codice = a.codice_corso
+AND a.codice_corso_laurea = cdl.codice
+AND cdl.tipologia="speciali stica";
+
+-- selezionare i nomi dei corsi e le info docente i cui docenti abitano a “Milano” 
+-- in provincia di “MI” [2]
+SELECT co.nome, d.*
+FROM corso co, docente d, citta ci
+WHERE co.docente = d.matricola
+AND d.citta_residenza = ci.codice
+AND ci.nome = "Milano"
+AND ci.provincia = "MI";
+
+-- selezionare gli studenti che hanno passato l’esame di “BASI DI DATI” 
+-- con un voto superiore a 25, indicando il voto conseguito e la data [109]
+SELECT s.*, e.voto, e.data
+FROM studente s, esame e, corso c
+WHERE s.matricola = e.matricola_studente
+AND e.codice_corso = c.codice
+AND c.nome = "BASI DI DATI"
+AND e.voto > 25;
+
+-- selezionare gli studenti che hanno passato l’esame di “BASI DI DATI”
+-- con un voto superiore a 25 nei 2 anni antecedenti il 04/05/2020, 
+-- indicando il numero di giorni passati. [39]
+SELECT s.*, e.voto, e.data, DATEDIFF("2020-05-04", e.data) AS num_giorni
+FROM studente s, esame e, corso c
+WHERE s.matricola = e.matricola_studente
+AND e.codice_corso = c.codice
+AND c.nome = "BASI DI DATI"
+AND e.voto > 25
+AND DATEDIFF("2020-05-04",e.data) < 730;
+
+-- selezionare gli esami sostenuti dalla studentessa Viola Lomartire. 
+-- Per ogni esame, se è stato sostenuto prima del 04/05/2018, 
+-- stampare “vecchia”, altrimenti “nuova” in un campo chiamato "riforma" [14]
+SELECT c.nome, e.voto, e.data,
+IF ( 
+	DATEDIFF("2018-05-04",e.data)>0,
+    "vecchia",
+    "nuova"
+    ) AS riforma
+FROM studente s, esame e, corso c
+WHERE s.matricola = e.matricola_studente
+AND e.codice_corso = c.codice
+AND s.nome="Viola"
+AND s.cognome="Lomartire";
